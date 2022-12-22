@@ -19,6 +19,7 @@ public class AnimationAndMovementController : MonoBehaviour
     int isWalkingHash;
     int isRunningHash;
     int isJumpingHash;
+    int isDancingHash;
     float rotationFactorPerFrame = 5.0f;
     float runMultiplier = 4.0f;
     float speed = 2.0f;
@@ -35,7 +36,8 @@ public class AnimationAndMovementController : MonoBehaviour
         animator = GetComponent<Animator>();
         isWalkingHash = Animator.StringToHash("isWalking");  
         isRunningHash = Animator.StringToHash("isRunning");  
-        isJumpingHash = Animator.StringToHash("isJumping"); 
+        isJumpingHash = Animator.StringToHash("isJumping");  
+        isDancingHash = Animator.StringToHash("isDancing"); 
 
         // playerInput.CharacterControls.Move.started += context => {Debug.Log(context.ReadValue<Vector2>()); };
         // playerInput.CharacterControls.Move.started += onMovementInput;
@@ -92,15 +94,22 @@ public class AnimationAndMovementController : MonoBehaviour
         bool isWalking = animator.GetBool(isWalkingHash);
         bool isRunning = animator.GetBool(isRunningHash);
         bool isJumping = animator.GetBool(isJumpingHash);
+        bool isDancing = animator.GetBool(isDancingHash);
         currentMovement.x = 0.0f;
         currentMovement.z = 0.0f;
 
-        // if(isJumping){
-        //     animator.SetBool(isJumpingHash, false);
-        // } else if((Input.GetKey("j"))){
-        //     animator.SetBool(isJumpingHash, true);
-        //     return;
-        // }
+        if(isJumping){
+            animator.SetBool(isJumpingHash, false);
+        } else if((Input.GetKey("j"))){
+            animator.SetBool(isJumpingHash, true);
+            return;
+        }
+        if(isDancing){
+            animator.SetBool(isDancingHash, false);
+        } else if((Input.GetKey("k"))){
+            animator.SetBool(isDancingHash, true);
+            return;
+        }
         if((Input.GetKey("w"))){
             currentMovement.z = 1.0f;
         }
