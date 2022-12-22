@@ -13,12 +13,15 @@ public class AnimationAndMovementController : MonoBehaviour
     Vector2 currentMovementInput;
     Vector3 currentMovement;
     Vector3 currentRunMovement;
+    Vector3 cameraRelativeMovement;
     bool isMovementPressed;
     bool isRunPressed;
     int isWalkingHash;
     int isRunningHash;
-    float rotationFactorPerFrame = 15.0f;
-    float runMultiplier = 3.0f;
+    int isJumpingHash;
+    float rotationFactorPerFrame = 5.0f;
+    float runMultiplier = 4.0f;
+    float speed = 2.0f;
     // float velocity = 0.0f;
     // public float acceleration = 0.5f;
     // public float deceleration = 0.5f;
@@ -30,21 +33,22 @@ public class AnimationAndMovementController : MonoBehaviour
         playerInput = new PlayerInput();
         characterController = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+        isWalkingHash = Animator.StringToHash("isWalking");  
+        isRunningHash = Animator.StringToHash("isRunning");  
+        isJumpingHash = Animator.StringToHash("isJumping"); 
 
-        playerInput.CharacterControls.Move.started += context => {Debug.Log(context.ReadValue<Vector2>()); };
+        // playerInput.CharacterControls.Move.started += context => {Debug.Log(context.ReadValue<Vector2>()); };
         // playerInput.CharacterControls.Move.started += onMovementInput;
         // playerInput.CharacterControls.Move.canceled += onMovementInput;
         // playerInput.CharacterControls.Move.performed += onMovementInput; 
         // playerInput.CharacterControls.Run.started += onRun; 
         // playerInput.CharacterControls.Run.canceled += onRun;
-        isWalkingHash = Animator.StringToHash("isWalking");  
-        isRunningHash = Animator.StringToHash("isRunning"); 
     }
  
-    void onRun(InputAction.CallbackContext context)
-    {
-        isRunPressed =  context.ReadValueAsButton();
-    }
+    // void onRun(InputAction.CallbackContext context)
+    // {
+    //     isRunPressed =  context.ReadValueAsButton();
+    // }
 
     void handleRotation()
     {
@@ -59,58 +63,79 @@ public class AnimationAndMovementController : MonoBehaviour
         }
     }
 
-    void onMovementInput (InputAction.CallbackContext context)
-    {
-        Debug.Log(context.ReadValue<Vector2>());
-        currentMovementInput = context.ReadValue<Vector2>();
-        currentMovement.x = currentMovementInput.x;
-        currentMovement.z = currentMovementInput.y;
-        currentRunMovement.x = currentMovementInput.x * runMultiplier;
-        currentRunMovement.z = currentMovementInput.y * runMultiplier;
-        isMovementPressed = currentMovementInput.x != 0 || currentMovementInput.y != 0; 
-    }
+    // void onMovementInput (InputAction.CallbackContext context)
+    // {
+    //     Debug.Log(context.ReadValue<Vector2>());
+    //     currentMovementInput = context.ReadValue<Vector2>();
+    //     currentMovement.x = currentMovementInput.x;
+    //     currentMovement.z = currentMovementInput.y;
+    //     currentRunMovement.x = currentMovementInput.x * runMultiplier;
+    //     currentRunMovement.z = currentMovementInput.y * runMultiplier;
+    //     isMovementPressed = currentMovementInput.x != 0 || currentMovementInput.y != 0; 
+    // }
 
     // Start is called before the first frame update
     // void Start()
     // {
     //     animator = GetComponent<Animator>();
+    //     playerInput = new PlayerInput();
+    //     characterController = GetComponent<CharacterController>();
+    //     animator = GetComponent<Animator>();
     //     isWalkingHash = Animator.StringToHash("isWalking");  
-    //     isRunningHash = Animator.StringToHash("isRunning");  
-    //     // velocityHash = Animator.StringToHash("Velocity"); 
+    //     isRunningHash = Animator.StringToHash("isRunning"); 
     // }
 
     // Update is called once per frame
 
     void handleAnimation()
     {
-        // Debug.Log(animator.GetBool(isWalkingHash));
         bool isWalking = animator.GetBool(isWalkingHash);
         bool isRunning = animator.GetBool(isRunningHash);
-        // bool forwardPressed = Input.GetKey("w");
-        // bool runPressed = Input.GetKey("left shift");
+        bool isJumping = animator.GetBool(isJumpingHash);
+        currentMovement.x = 0.0f;
+        currentMovement.z = 0.0f;
 
-        if (isMovementPressed && !isWalking) {
-            animator.SetBool(isWalkingHash, true);
+        // if(isJumping){
+        //     animator.SetBool(isJumpingHash, false);
+        // } else if((Input.GetKey("j"))){
+        //     animator.SetBool(isJumpingHash, true);
+        //     return;
+        // }
+        if((Input.GetKey("w"))){
+            currentMovement.z = 1.0f;
         }
-        else if (!isMovementPressed && isWalking) {
+        else if((Input.GetKey("s"))){
+            currentMovement.z = -1.0f;
+        }
+        else if((Input.GetKey("a"))){
+            currentMovement.x = -1.0f;
+        }
+        else if((Input.GetKey("d"))){
+            currentMovement.x = 1.0f;
+        }
+        isRunPressed = Input.GetKey("left shift");
+        isMovementPressed = currentMovement.x != 0.0f || currentMovement.z != 0.0f; 
+
+        if (!isMovementPressed && (isWalking || isRunning)) {
             animator.SetBool(isWalkingHash, false);
-        }
-        if (!isRunning && (isMovementPressed && isRunPressed)) {
-            animator.SetBool(isRunningHash, true);
-        }
-        else if (isRunning && (!isMovementPressed && !isRunPressed)) {
             animator.SetBool(isRunningHash, false);
         }
-        // if (forwardPressed && velocity<1.0f){
-        //     velocity += Time.deltaTime * acceleration;
-        // }
-        // if (!forwardPressed && velocity>0.0f){
-        //     velocity -= Time.deltaTime * deceleration;
-        // }
-        // if (!forwardPressed && velocity <0.0f){
-        //     velocity = 0.0f;
-        // }
-        // animator.SetFloat(velocityHash, velocity);
+        else if ((isMovementPressed && isRunPressed) && !isRunning) {
+            animator.SetBool(isRunningHash, true);
+            animator.SetBool(isWalkingHash, false);
+        }
+        else if ((isMovementPressed && !isRunPressed) && !isWalking) {
+            animator.SetBool(isRunningHash, false);
+            animator.SetBool(isWalkingHash, true);
+        }
+
+        if(!animator.GetBool(isRunningHash) && !animator.GetBool(isWalkingHash)){
+            currentMovement.x = 0.0f;
+            currentMovement.z = 0.0f;
+        } else if (animator.GetBool(isRunningHash)) {
+            currentMovement.x = currentMovement.x * runMultiplier;
+            currentMovement.z = currentMovement.z * runMultiplier;
+        }
     }
 
     void handleGravity()
@@ -132,13 +157,24 @@ public class AnimationAndMovementController : MonoBehaviour
         handleGravity();
         handleRotation();
         handleAnimation();
-
-        if(isRunPressed){
-            characterController.Move(currentRunMovement * Time.deltaTime);
-        } else {
-            characterController.Move(currentMovement * Time.deltaTime);
-        }
+        // cameraRelativeMovement = ConvertToCameraSpace(currentMovement);
+        // characterController.Move(cameraRelativeMovement*Time.deltaTime); 
+        
+        characterController.Move(currentMovement*speed * Time.deltaTime);
     }
+
+    // Vector3 ConvertToCameraSpace(Vector3 vectorToRotate){
+    //     float currentYValue = vectorToRotate.y;
+    //     Vector3 cameraForward = Camera.main.transform.forward;
+    //     Vector3 cameraRight = Camera.main.transform.right;
+    //     cameraForward.y = 0.0f;
+    //     cameraRight.y = 0.0f;
+    //     Vector3 cameraForwardZProduct = vectorToRotate.z *cameraForward;
+    //     Vector3 cameraForwardXProduct = vectorToRotate.x *cameraRight;
+    //     Vector3 vectorRotatedToCameraSpace = cameraForwardZProduct + cameraForward;
+    //     vectorRotatedToCameraSpace.y = currentYValue;
+    //     return vectorRotatedToCameraSpace;
+    // }
 
     void onEnable()
     {
